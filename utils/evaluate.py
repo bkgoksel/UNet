@@ -14,34 +14,34 @@ import argparse
 import json
 import sys
 
+
 def evaluate(eval_file, answer_dict):
     f1 = exact_match = total = 0
     for key, value in answer_dict.items():
         total += 1
         ground_truths = eval_file[key]["answers"]
         if not ground_truths:
-            ground_truths.append('')
+            ground_truths.append("")
         prediction = value
         exact_match += metric_max_over_ground_truths(
-            exact_match_score, prediction, ground_truths)
-        f1 += metric_max_over_ground_truths(f1_score,
-                                            prediction, ground_truths)
+            exact_match_score, prediction, ground_truths
+        )
+        f1 += metric_max_over_ground_truths(f1_score, prediction, ground_truths)
     exact_match = 100.0 * exact_match / total
     f1 = 100.0 * f1 / total
-    return {'exact_match': exact_match, 'f1': f1}
+    return {"exact_match": exact_match, "f1": f1}
 
 
 def normalize_answer(s):
-
     def remove_articles(text):
-        return re.sub(r'\b(a|an|the)\b', ' ', text)
+        return re.sub(r"\b(a|an|the)\b", " ", text)
 
     def white_space_fix(text):
-        return ' '.join(text.split())
+        return " ".join(text.split())
 
     def remove_punc(text):
         exclude = set(string.punctuation)
-        return ''.join(ch for ch in text if ch not in exclude)
+        return "".join(ch for ch in text if ch not in exclude)
 
     def lower(text):
         return text.lower()
@@ -65,7 +65,7 @@ def f1_score(prediction, ground_truth):
 
 
 def exact_match_score(prediction, ground_truth):
-    return (normalize_answer(prediction) == normalize_answer(ground_truth))
+    return normalize_answer(prediction) == normalize_answer(ground_truth)
 
 
 def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):

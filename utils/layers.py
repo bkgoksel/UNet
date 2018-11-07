@@ -13,10 +13,20 @@ from typing import Callable
 
 from torch.autograd import Variable
 
+
 class StackedBRNN(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers,
-                 dropout=0, concat=True, use_cuda = True, dropout_output=False, rnn_type=nn.LSTM,
-                 padding=True):
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        num_layers,
+        dropout=0,
+        concat=True,
+        use_cuda=True,
+        dropout_output=False,
+        rnn_type=nn.LSTM,
+        padding=True,
+    ):
         super(StackedBRNN, self).__init__()
         self.padding = padding
         self.dropout_output = dropout_output
@@ -26,9 +36,9 @@ class StackedBRNN(nn.Module):
         self.rnns = nn.ModuleList()
         for i in range(num_layers):
             input_size = input_size if i == 0 else 2 * hidden_size
-            self.rnns.append(rnn_type(input_size, hidden_size,
-                                      num_layers=1,
-                                      bidirectional=True))
+            self.rnns.append(
+                rnn_type(input_size, hidden_size, num_layers=1, bidirectional=True)
+            )
 
     def forward(self, x, x_mask):
         """Can choose to either handle or ignore variable length sequences.
@@ -55,9 +65,7 @@ class StackedBRNN(nn.Module):
 
             # Apply dropout to hidden input
             if self.dropout > 0:
-                rnn_input = F.dropout(rnn_input,
-                                      p=self.dropout,
-                                      training=self.training)
+                rnn_input = F.dropout(rnn_input, p=self.dropout, training=self.training)
             # Forward
             rnn_output = self.rnns[i](rnn_input)[0]
             outputs.append(rnn_output)
@@ -73,9 +81,7 @@ class StackedBRNN(nn.Module):
 
         # Dropout on output layer
         if self.dropout_output and self.dropout > 0:
-            output = F.dropout(output,
-                               p=self.dropout,
-                               training=self.training)
+            output = F.dropout(output, p=self.dropout, training=self.training)
         return output
 
     def _forward_padded(self, x, x_mask):
@@ -106,11 +112,12 @@ class StackedBRNN(nn.Module):
 
             # Apply dropout to input
             if self.dropout > 0:
-                dropout_input = F.dropout(rnn_input.data,
-                                          p=self.dropout,
-                                          training=self.training)
-                rnn_input = nn.utils.rnn.PackedSequence(dropout_input,
-                                                        rnn_input.batch_sizes)
+                dropout_input = F.dropout(
+                    rnn_input.data, p=self.dropout, training=self.training
+                )
+                rnn_input = nn.utils.rnn.PackedSequence(
+                    dropout_input, rnn_input.batch_sizes
+                )
             outputs.append(self.rnns[i](rnn_input)[0])
 
         # Unpack everything
@@ -129,16 +136,14 @@ class StackedBRNN(nn.Module):
 
         # Pad up to original batch sequence length
         if output.size(1) != x_mask.size(1):
-            padding = torch.zeros(output.size(0),
-                                  x_mask.size(1) - output.size(1),
-                                  output.size(2)).type(output.data.type())
+            padding = torch.zeros(
+                output.size(0), x_mask.size(1) - output.size(1), output.size(2)
+            ).type(output.data.type())
             output = torch.cat([output, Variable(padding)], 1)
 
         # Dropout on output layer
         if self.dropout_output and self.dropout > 0:
-            output = F.dropout(output,
-                               p=self.dropout,
-                               training=self.training)
+            output = F.dropout(output, p=self.dropout, training=self.training)
         return output
 
 
@@ -148,22 +153,32 @@ class CharEmbeddingLayer(nn.Module):
         self.char_single_embedding_dim = char_single_embedding_dim
         self.char_embedding_dim = char_embedding_dim
 
-        self.embedding_lookup = nn.Embedding(char_embedding.size(0), char_embedding.size(1), padding_idx=0)
-        self.cnn = CNN(embedding_dim=char_single_embedding_dim, num_filters=char_embedding_dim)
+        self.embedding_lookup = nn.Embedding(
+            char_embedding.size(0), char_embedding.size(1), padding_idx=0
+        )
+        self.cnn = CNN(
+            embedding_dim=char_single_embedding_dim, num_filters=char_embedding_dim
+        )
 
     def forward(self, text_char, text_char_mask):
         batch_size, max_length, max_word_length = text_char.size()
         # embedding look up
-        text_char = text_char.contiguous().view(batch_size * max_length, max_word_length)
+        text_char = text_char.contiguous().view(
+            batch_size * max_length, max_word_length
+        )
         text_char_mask = text_char_mask.view(batch_size * max_length, max_word_length)
 
         text_char = self.embedding_lookup(text_char)
         text_char = self.cnn(text_char, text_char_mask)
-        text_char = text_char.contiguous().view(batch_size * max_length * self.char_embedding_dim, -1)
+        text_char = text_char.contiguous().view(
+            batch_size * max_length * self.char_embedding_dim, -1
+        )
         text_char = nn.functional.relu(text_char)
 
         text_char = torch.max(text_char, 1)[0]
-        text_char = text_char.contiguous().view(batch_size, max_length, self.char_embedding_dim)
+        text_char = text_char.contiguous().view(
+            batch_size, max_length, self.char_embedding_dim
+        )
         return text_char
 
 
@@ -171,7 +186,14 @@ class CNN(nn.Module):
 
     """Docstring for CNN"""
 
-    def __init__(self, embedding_dim, num_filters=100, ngram_filter_sizes=(2, 3, 4, 5), conv_layer_activation='relu', output_dim=None):
+    def __init__(
+        self,
+        embedding_dim,
+        num_filters=100,
+        ngram_filter_sizes=(2, 3, 4, 5),
+        conv_layer_activation="relu",
+        output_dim=None,
+    ):
         """TODO: to be defined1. """
         nn.Module.__init__(self)
 
@@ -183,9 +205,13 @@ class CNN(nn.Module):
 
         self.convolution_layers = nn.ModuleList()
         for ngram_size in self.ngram_filter_sizes:
-            self.convolution_layers.append(Conv1d(in_channels=self.embedding_dim,
-                                                  out_channels=self.num_filters,
-                                                  kernel_size=ngram_size))
+            self.convolution_layers.append(
+                Conv1d(
+                    in_channels=self.embedding_dim,
+                    out_channels=self.num_filters,
+                    kernel_size=ngram_size,
+                )
+            )
 
         maxpool_output_dim = self.num_filters * len(self.ngram_filter_sizes)
         if self.output_dim:
@@ -211,7 +237,11 @@ class CNN(nn.Module):
                 self.conv_layer_activation(convolution_layer(tokens)).max(dim=2)[0]
             )
 
-        maxpool_output = torch.cat(filter_outputs, dim=1) if len(filter_outputs) > 1 else filter_outputs[0]
+        maxpool_output = (
+            torch.cat(filter_outputs, dim=1)
+            if len(filter_outputs) > 1
+            else filter_outputs[0]
+        )
 
         if self.projection_layer:
             result = self.projection_layer(maxpool_output)
@@ -240,14 +270,18 @@ class Highway(torch.nn.Module):
     activation : ``Callable[[torch.Tensor], torch.Tensor]``, optional (default=``torch.nn.functional.relu``)
         The non-linearity to use in the highway layers.
     """
-    def __init__(self,
-                 input_dim: int,
-                 num_layers: int = 2,
-                 activation: Callable[[torch.Tensor], torch.Tensor] = torch.nn.functional.relu) -> None:
+
+    def __init__(
+        self,
+        input_dim: int,
+        num_layers: int = 2,
+        activation: Callable[[torch.Tensor], torch.Tensor] = torch.nn.functional.relu,
+    ) -> None:
         super(Highway, self).__init__()
         self._input_dim = input_dim
-        self._layers = torch.nn.ModuleList([torch.nn.Linear(input_dim, input_dim * 2)
-                                            for _ in range(num_layers)])
+        self._layers = torch.nn.ModuleList(
+            [torch.nn.Linear(input_dim, input_dim * 2) for _ in range(num_layers)]
+        )
         self._activation = activation
         for layer in self._layers:
             # We should bias the highway layer to just carry its input forward.  We do that by
@@ -256,21 +290,27 @@ class Highway(torch.nn.Module):
             # of the bias vector in each Linear layer.
             layer.bias[input_dim:].data.fill_(1)
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:  # pylint: disable=arguments-differ
+    def forward(
+        self, inputs: torch.Tensor
+    ) -> torch.Tensor:  # pylint: disable=arguments-differ
         current_input = inputs
         for layer in self._layers:
             projected_input = layer(current_input)
             linear_part = current_input
             # NOTE: if you modify this, think about whether you should modify the initialization
             # above, too.
-            nonlinear_part = projected_input[:, (0 * self._input_dim):(1 * self._input_dim)]
-            gate = projected_input[:, (1 * self._input_dim):(2 * self._input_dim)]
+            nonlinear_part = projected_input[
+                :, (0 * self._input_dim) : (1 * self._input_dim)
+            ]
+            gate = projected_input[:, (1 * self._input_dim) : (2 * self._input_dim)]
             nonlinear_part = self._activation(nonlinear_part)
             gate = torch.nn.functional.sigmoid(gate)
             if self.training:
                 epsilon = (torch.rand(gate.size()) - 0.5) / 10.0
                 epsilon = Variable(epsilon.cuda(gate.get_device()))
-                current_input = gate * linear_part + (1 - gate + epsilon) * nonlinear_part
+                current_input = (
+                    gate * linear_part + (1 - gate + epsilon) * nonlinear_part
+                )
             else:
                 current_input = gate * linear_part + (1 - gate) * nonlinear_part
         return current_input
@@ -285,6 +325,7 @@ class TimeDistributed(torch.nn.Module):
     Note that while the above gives shapes with ``batch_size`` first, this ``Module`` also works if
     ``batch_size`` is second - we always just combine the first two dimensions, then split them.
     """
+
     def __init__(self, module):
         super(TimeDistributed, self).__init__()
         self._module = module
@@ -305,15 +346,16 @@ class TimeDistributed(torch.nn.Module):
 
         # Now get the output back into the right shape.
         # (batch_size, time_steps, [hidden_size])
-        new_shape = [input_size[0], input_size[1]] + [x for x in reshaped_outputs.size()[1:]]
+        new_shape = [input_size[0], input_size[1]] + [
+            x for x in reshaped_outputs.size()[1:]
+        ]
         outputs = reshaped_outputs.contiguous().view(*new_shape)
 
         return outputs
 
 
-class FullAttention(nn.Module) :
-
-    def __init__(self, input_size, hidden_size, dropout, use_cuda = True):
+class FullAttention(nn.Module):
+    def __init__(self, input_size, hidden_size, dropout, use_cuda=True):
         super(FullAttention, self).__init__()
         self.use_cuda = use_cuda
         self.dropout = dropout
@@ -324,17 +366,23 @@ class FullAttention(nn.Module) :
 
         self.init_weights()
 
-    def init_weights(self) :
+    def init_weights(self):
         nn.init.xavier_uniform_(self.U.weight.data)
 
     def forward(self, passage, p_mask, question, q_mask, rep, rep_p, is_training):
 
-        if is_training :
+        if is_training:
             keep_prob = 1.0 - self.dropout
-            drop_mask = Dropout(passage, self.dropout, is_training, return_mask=True, use_cuda = self.use_cuda)
+            drop_mask = Dropout(
+                passage,
+                self.dropout,
+                is_training,
+                return_mask=True,
+                use_cuda=self.use_cuda,
+            )
             d_passage = torch.div(passage, keep_prob) * drop_mask
             d_ques = torch.div(question, keep_prob) * drop_mask
-        else :
+        else:
             d_passage = passage
             d_ques = question
 
@@ -350,21 +398,20 @@ class FullAttention(nn.Module) :
         if rep_p is not None:
             scores_T = scores.clone().transpose(1, 2)
             mask_p = p_mask.unsqueeze(1).repeat(1, question.size(1), 1)
-            scores_T.data.masked_fill_(mask_p.data, -float('inf'))
+            scores_T.data.masked_fill_(mask_p.data, -float("inf"))
             alpha_p = F.softmax(scores_T, 2)
             output_q = torch.bmm(alpha_p, rep_p)
 
         mask = q_mask.unsqueeze(1).repeat(1, passage.size(1), 1)
-        scores.data.masked_fill_(mask.data, -float('inf'))
+        scores.data.masked_fill_(mask.data, -float("inf"))
         alpha = F.softmax(scores, 2)
         output = torch.bmm(alpha, rep)
 
         return output, output_q
 
 
-class WordAttention(nn.Module) :
-
-    def __init__(self, input_size, hidden_size, dropout, use_cuda = True) :
+class WordAttention(nn.Module):
+    def __init__(self, input_size, hidden_size, dropout, use_cuda=True):
         super(WordAttention, self).__init__()
         self.use_cuda = use_cuda
         self.dropout = dropout
@@ -373,18 +420,24 @@ class WordAttention(nn.Module) :
         self.W = nn.Linear(input_size, hidden_size)
         self.init_weights()
 
-    def init_weights(self) :
+    def init_weights(self):
         nn.init.xavier_uniform_(self.W.weight.data)
         self.W.bias.data.fill_(0.1)
 
     def forward(self, passage, p_mask, question, q_mask, is_training):
 
-        if is_training :
+        if is_training:
             keep_prob = 1.0 - self.dropout
-            drop_mask = Dropout(passage, self.dropout, is_training, return_mask = True, use_cuda = self.use_cuda)
+            drop_mask = Dropout(
+                passage,
+                self.dropout,
+                is_training,
+                return_mask=True,
+                use_cuda=self.use_cuda,
+            )
             d_passage = torch.div(passage, keep_prob) * drop_mask
             d_ques = torch.div(question, keep_prob) * drop_mask
-        else :
+        else:
             d_passage = passage
             d_ques = question
 
@@ -394,16 +447,15 @@ class WordAttention(nn.Module) :
         scores = torch.bmm(Wp, Wq.transpose(2, 1))
 
         mask = q_mask.unsqueeze(1).repeat(1, passage.size(1), 1)
-        scores.data.masked_fill_(mask.data, -float('inf'))
+        scores.data.masked_fill_(mask.data, -float("inf"))
         alpha = F.softmax(scores, dim=2)
         output = torch.bmm(alpha, question)
 
         return output
 
 
-class Summ(nn.Module) :
-
-    def __init__(self, input_size, dropout, use_cuda = True) :
+class Summ(nn.Module):
+    def __init__(self, input_size, dropout, use_cuda=True):
         super(Summ, self).__init__()
         self.use_cuda = use_cuda
         self.dropout = dropout
@@ -415,11 +467,11 @@ class Summ(nn.Module) :
         nn.init.xavier_uniform_(self.w.weight.data)
         self.w.bias.data.fill_(0.1)
 
-    def forward(self, x, mask, is_training) :
+    def forward(self, x, mask, is_training):
 
-        d_x = Dropout(x, self.dropout, is_training, use_cuda = self.use_cuda)
+        d_x = Dropout(x, self.dropout, is_training, use_cuda=self.use_cuda)
         beta = self.w(d_x).squeeze(2)
-        beta.data.masked_fill_(mask.data, -float('inf'))
+        beta.data.masked_fill_(mask.data, -float("inf"))
         beta = F.softmax(beta, 1)
         output = torch.bmm(beta.unsqueeze(1), x).squeeze(1)
         return output
@@ -431,7 +483,8 @@ class Answer(nn.Module):
 
     Optionally don't normalize output weights.
     """
-    RNN_TYPES = {'lstm': nn.LSTM, 'gru': nn.GRU, 'rnn': nn.RNN}
+
+    RNN_TYPES = {"lstm": nn.LSTM, "gru": nn.GRU, "rnn": nn.RNN}
 
     def __init__(self, x_size, y_size, opt, first=False, check=False):
         super(Answer, self).__init__()
@@ -444,13 +497,15 @@ class Answer(nn.Module):
         if self.first:
             self.rnn = nn.GRUCell(x_size, y_size)
         if self.check is True:
-            self.doc_rnn = StackedBRNN(input_size = 2 * x_size,
-                                       hidden_size = opt['hidden_size'],
-                                       num_layers = 1,
-                                       dropout = opt['dropout'])
+            self.doc_rnn = StackedBRNN(
+                input_size=2 * x_size,
+                hidden_size=opt["hidden_size"],
+                num_layers=1,
+                dropout=opt["dropout"],
+            )
         self.init_weights()
 
-    def init_weights(self) :
+    def init_weights(self):
         nn.init.xavier_uniform_(self.linear.weight.data)
         self.linear.bias.data.fill_(0.1)
 
@@ -460,11 +515,11 @@ class Answer(nn.Module):
         y = batch * h2
         x_mask = batch * len
         """
-        d_y = F.dropout(y, p=self.opt['dropout'], training=self.training)
+        d_y = F.dropout(y, p=self.opt["dropout"], training=self.training)
         yW = self.linear(d_y)
         # xWy = x.bmm(Wy.unsqueeze(2)).squeeze(2)
         xWy = yW.unsqueeze(1).bmm(x.transpose(2, 1)).squeeze(1)
-        xWy.data.masked_fill_(x_mask.data, -float('inf'))
+        xWy.data.masked_fill_(x_mask.data, -float("inf"))
 
         if self.first or self.check:
             alpha = F.softmax(xWy, dim=1)
@@ -475,7 +530,9 @@ class Answer(nn.Module):
         x_check = None
         if self.first:
             rnn_input = torch.bmm(alpha.unsqueeze(1), x).squeeze(1)
-            rnn_input = F.dropout(rnn_input, p=self.opt['dropout'], training=self.training)
+            rnn_input = F.dropout(
+                rnn_input, p=self.opt["dropout"], training=self.training
+            )
             y_new = self.rnn(rnn_input, y)
 
         if self.check is True:
@@ -487,21 +544,20 @@ class Answer(nn.Module):
         return xWy, x_new, y_new, x_check
 
 
-class PointerNet(nn.Module) :
-
-    def __init__(self, input_size, opt, use_cuda = True) :
+class PointerNet(nn.Module):
+    def __init__(self, input_size, opt, use_cuda=True):
         super(PointerNet, self).__init__()
         self.opt = opt
         self.input_size = input_size
-        if opt['check_answer']:
+        if opt["check_answer"]:
             self.check = Answer(input_size, input_size, opt, first=False, check=True)
         self.start = Answer(input_size, input_size, opt, first=True, check=False)
         self.end = Answer(input_size, input_size, opt, first=False, check=False)
 
-    def forward(self, self_states, p_mask, init_states, q_summ, is_training) :
+    def forward(self, self_states, p_mask, init_states, q_summ, is_training):
 
         x_check = None
-        if self.opt['check_answer']:
+        if self.opt["check_answer"]:
             _, self_states, _, x_check = self.check(self_states, init_states, p_mask)
 
         logits1, _, init_states, _ = self.start(self_states, q_summ, p_mask)
@@ -510,24 +566,24 @@ class PointerNet(nn.Module) :
         return logits1, logits2, x_check
 
 
-def Dropout(x, dropout, is_train, return_mask = False, var=True, use_cuda=True) :
+def Dropout(x, dropout, is_train, return_mask=False, var=True, use_cuda=True):
 
-    if not var :
+    if not var:
         return F.dropout(x, dropout, is_train)
 
-    if dropout > 0.0 and is_train :
+    if dropout > 0.0 and is_train:
         shape = x.size()
         keep_prob = 1.0 - dropout
         random_tensor = keep_prob
         tmp = Variable(torch.FloatTensor(shape[0], 1, shape[2]))
-        if use_cuda :
+        if use_cuda:
             tmp = tmp.cuda()
         nn.init.uniform_(tmp)
         random_tensor += tmp
         binary_tensor = torch.floor(random_tensor)
         x = torch.div(x, keep_prob) * binary_tensor
 
-    if return_mask :
+    if return_mask:
         return binary_tensor
 
     return x
