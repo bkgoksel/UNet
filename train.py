@@ -16,12 +16,10 @@ from model import UNet
 from utils.dataset import load_data, get_batches
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--data_path", default="./SQuAD/")
-parser.add_argument(
-    "--model_dir",
-    default="train_model/utf-8_new_cf",
-    help="path to store saved models.",
-)
+parser.add_argument("--prepro_dir", default="preprocessed")
+parser.add_argument("--dev_file", default="dev-v2.0.json")
+parser.add_argument("--train_file", default="train-v2.0.json")
+parser.add_argument("--model_dir", help="path to store saved models.")
 parser.add_argument("--seed", default=1023)
 parser.add_argument("--use_cuda", default=True, help="whether to use GPU acceleration.")
 
@@ -76,10 +74,10 @@ def train():
         model.eval()
         model.Evaluate(
             dev_batches,
-            args.data_path + "dev_eval.json",
+            os.path.join(args.prepro_dir, "dev_eval.json"),
             answer_file="result/" + args.model_dir.split("/")[-1] + ".answers",
-            drop_file=args.data_path + "drop.json",
-            dev=args.data_path + "dev-v2.0.json",
+            drop_file=os.path.join(args.prepro_dir, "drop.json"),
+            dev=args.dev_file,
         )
         exit()
 
@@ -89,10 +87,12 @@ def train():
         model.eval()
         _, F1 = model.Evaluate(
             dev_batches,
-            args.data_path + "dev_eval.json",
-            answer_file="result/" + args.model_dir.split("/")[-1] + ".answers",
-            drop_file=args.data_path + "drop.json",
-            dev=args.data_path + "dev-v2.0.json",
+            os.path.join(args.prepro_dir, "dev_eval.json"),
+            answer_file=os.path.join(
+                "result/", args.model_dir.split("/")[-1], ".answers"
+            ),
+            drop_file=os.path.join(args.prepro_dir, "drop.json"),
+            dev=args.dev_file,
         )
         best_score = F1
         with open(args.model_dir + "_f1_scores.pkl", "rb") as f:
@@ -134,10 +134,12 @@ def train():
         model.eval()
         exact_match_score, F1 = model.Evaluate(
             dev_batches,
-            args.data_path + "dev_eval.json",
-            answer_file="result/" + args.model_dir.split("/")[-1] + ".answers",
-            drop_file=args.data_path + "drop.json",
-            dev=args.data_path + "dev-v2.0.json",
+            os.path.join(args.prepro_dir, "dev_eval.json"),
+            answer_file=os.path.join(
+                "result/", args.model_dir.split("/")[-1], ".answers"
+            ),
+            drop_file=os.path.join(args.prepro_dir, "drop.json"),
+            dev=args.dev_file,
         )
         f1_scores.append(F1)
         em_scores.append(exact_match_score)

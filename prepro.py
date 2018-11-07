@@ -5,6 +5,8 @@
 # Date              : 23.06.2018
 # Last Modified Date: 07.11.2018
 # Last Modified By  : Sun Fu <cstsunfu@gmail.com>
+
+import argparse
 import random
 import ujson as json
 import numpy as np
@@ -450,11 +452,11 @@ def build_features(
         context_tokens.append(example["context_tokens"][:para_limit])
 
         for i, match in enumerate(example["match_origin"][:para_limit]):
-            match_origin[i] = 1 if match == True else 0
+            match_origin[i] = 1 if match else 0
         for i, match in enumerate(example["match_lower"][:para_limit]):
-            match_lower[i] = 1 if match == True else 0
+            match_lower[i] = 1 if match else 0
         for i, match in enumerate(example["match_lemma"][:para_limit]):
-            match_lemma[i] = 1 if match == True else 0
+            match_lemma[i] = 1 if match else 0
 
         for i, tf in enumerate(example["context_tf"][:para_limit]):
             context_tf[i] = tf
@@ -470,13 +472,13 @@ def build_features(
 
         for j, match in enumerate(example["ques_match_origin"][:ques_limit]):
             i = j + pad_l
-            ques_match_origin[i] = 1 if match == True else 0
+            ques_match_origin[i] = 1 if match else 0
         for j, match in enumerate(example["ques_match_lower"][:ques_limit]):
             i = j + pad_l
-            ques_match_lower[i] = 1 if match == True else 0
+            ques_match_lower[i] = 1 if match else 0
         for j, match in enumerate(example["ques_match_lemma"][:ques_limit]):
             i = j + pad_l
-            ques_match_lemma[i] = 1 if match == True else 0
+            ques_match_lemma[i] = 1 if match else 0
         for j, tf in enumerate(example["ques_tf"][:ques_limit]):
             i = j + pad_l
             ques_tf[i] = tf
@@ -576,19 +578,22 @@ def build_features(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("train-file", type=str, default="train-v2.0.json")
+    parser.add_argument("dev-file", type=str, default="dev-v2.0.json")
+    parser.add_argument("glove-file", type=str, default="glove.txt")
+    parser.add_argument("output-dir", type=str, default="preprocessed")
+    args = parser.parse_args()
 
-    save_dir = "SQuAD/"
-    word_emb_file = "glove/glove.840B.300d.txt"
-
-    if not os.path.isdir(save_dir):
-        os.mkdir(save_dir)
+    if not os.path.isdir(args.output_dir):
+        os.mkdir(args.output_dir)
 
     ques_word_counter = Counter()
     word_counter, char_counter = Counter(), Counter()
     pos_counter, ner_counter = Counter(), Counter()
 
     train_examples, train_eval = process_file(
-        save_dir + "train-v2.0.json",
+        args.train_file,
         "train",
         word_counter,
         char_counter,
@@ -597,7 +602,7 @@ if __name__ == "__main__":
         ques_word_counter,
     )
     dev_examples, dev_eval = process_file(
-        save_dir + "dev-v2.0.json",
+        args.dev_file,
         "dev",
         word_counter,
         char_counter,
@@ -615,7 +620,7 @@ if __name__ == "__main__":
     word_emb, word2id = get_embedding(
         word_counter,
         "word",
-        emb_file=word_emb_file,
+        emb_file=args.glove_file,
         size=glove_word_size,
         vec_size=glove_dim,
         token2idx_dict=word2id,
@@ -635,7 +640,7 @@ if __name__ == "__main__":
     build_features(
         train_examples,
         "train",
-        save_dir + "train.json",
+        os.path.join(args.output_dir, "train.json"),
         word2id,
         char2id,
         pos2id,
@@ -644,16 +649,16 @@ if __name__ == "__main__":
     build_features(
         dev_examples,
         "dev",
-        save_dir + "dev.json",
+        os.path.join(args.output_dir, "dev.json"),
         word2id,
         char2id,
         pos2id,
         ner2id,
-        save_dir + "drop.json",
+        os.path.join(args.output_dir, "drop.json"),
         is_test=True,
     )
 
-    with open(save_dir + "ques_word_counter.pkl", "wb") as f:
+    with open(os.path.join(args.output_dir, "ques_word_counter.pkl"), "wb") as f:
         pkl.dump(ques_word_counter.most_common(), f)
 
     tune_idx = []
@@ -665,25 +670,25 @@ if __name__ == "__main__":
         if count == 1000:
             break
 
-    with open(save_dir + "tune_word_idx.pkl", "wb") as f:
+    with open(os.path.join(args.output_dir, "tune_word_idx.pkl"), "wb") as f:
         pkl.dump(tune_idx, f)
 
-    with open(save_dir + "train_eval.json", "w", encoding="utf-8") as f:
+    with open(os.path.join(args.output_dir, "train_eval.json"), encoding="utf-8") as f:
         json.dump(train_eval, f)
-    with open(save_dir + "dev_eval.json", "w", encoding="utf-8") as f:
+    with open(os.path.join(args.output_dir, "dev_eval.json"), encoding="utf-8") as f:
         json.dump(dev_eval, f)
 
-    with open(save_dir + "word_emb.json", "w", encoding="utf-8") as f:
+    with open(os.path.join(args.output_dir, "word_emb.json"), encoding="utf-8") as f:
         json.dump(word_emb, f)
 
-    with open(save_dir + "word2id.json", "w", encoding="utf-8") as f:
+    with open(os.path.join(args.output_dir, "word2id.json"), encoding="utf-8") as f:
         json.dump(word2id, f)
 
-    with open(save_dir + "char2id.json", "w", encoding="utf-8") as f:
+    with open(os.path.join(args.output_dir, "char2id.json"), encoding="utf-8") as f:
         json.dump(char2id, f)
 
-    with open(save_dir + "pos2id.json", "w") as f:
+    with open(os.path.join(args.output_dir, "pos2id.json")) as f:
         json.dump(pos2id, f)
 
-    with open(save_dir + "ner2id.json", "w") as f:
+    with open(os.path.join(args.output_dir, "ner2id.json")) as f:
         json.dump(ner2id, f)
