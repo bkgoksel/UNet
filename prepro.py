@@ -582,10 +582,10 @@ def build_features(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("train-file", type=str, default="train-v2.0.json")
-    parser.add_argument("dev-file", type=str, default="dev-v2.0.json")
-    parser.add_argument("glove-file", type=str, default="glove.txt")
-    parser.add_argument("output-dir", type=str, default="preprocessed")
+    parser.add_argument("--train-file", type=str, default="train-v2.0.json")
+    parser.add_argument("--dev-file", type=str, default="dev-v2.0.json")
+    parser.add_argument("--glove-file", type=str, default="glove.txt")
+    parser.add_argument("--output-dir", type=str, default="preprocessed")
     args = parser.parse_args()
 
     if not os.path.isdir(args.output_dir):
