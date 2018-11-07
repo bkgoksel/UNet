@@ -10,7 +10,10 @@ import numpy as np
 import torch.nn as nn
 import pickle as pkl
 import torch.nn.functional as F
-import ujson as json
+try:
+    import ujson as json
+except Exception:
+    import json
 
 from torch.autograd import Variable
 from utils.layers import (
@@ -63,7 +66,7 @@ class UNet(nn.Module):
         opts = self.opts
         print("load embedding...")
         word_emb = np.array(
-            get_data(opts["data_path"] + "word_emb.json"), dtype=np.float32
+            get_data(opts["prepro_dir"] + "word_emb.json"), dtype=np.float32
         )
         word_size = word_emb.shape[0]
         word_dim = word_emb.shape[1]
@@ -84,7 +87,7 @@ class UNet(nn.Module):
             for p in self.word_embeddings.parameters():
                 p.requires_grad = False
         else:
-            with open(opts["data_path"] + "tune_word_idx.pkl", "rb") as f:
+            with open(opts["prepro_dir"] + "tune_word_idx.pkl", "rb") as f:
                 tune_idx = pkl.load(f)
 
             self.fixed_idx = list(set([i for i in range(word_size)]) - set(tune_idx))
@@ -103,8 +106,8 @@ class UNet(nn.Module):
 
         if self.use_elmo:
             elmo_dim = 1024
-            options_file = "./SQuAD/elmo_options.json"
-            weight_file = "./SQuAD/elmo_weights.hdf5"
+            options_file = opts["elmo_options_file"]
+            weight_file = opts["elmo_weights_file"]
 
             self.elmo = Elmo(options_file, weight_file, 1, dropout=0)
 

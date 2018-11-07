@@ -5,9 +5,11 @@
 # Date              : 01.07.2018
 # Last Modified Date: 05.11.2018
 # Last Modified By  : Sun Fu <cstsunfu@gmail.com>
-import ujson as json
+try:
+    import ujson as json
+except Exception:
+    import json
 import numpy as np
-import torch
 import random
 
 from allennlp.modules.elmo import batch_to_ids
@@ -23,7 +25,7 @@ def get_data(filename):
 
 def load_data(opts):
     print("load data...")
-    data_path = opts["data_path"]
+    data_path = opts["prepro_dir"]
 
     train_data = get_data(data_path + "train.json")
     dev_data = get_data(data_path + "dev.json")

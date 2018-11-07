@@ -8,7 +8,10 @@
 
 import argparse
 import random
-import ujson as json
+try:
+    import ujson as json
+except Exception:
+    import json
 import numpy as np
 import pickle as pkl
 import spacy

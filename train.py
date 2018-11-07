@@ -11,7 +11,6 @@ import os
 import torch
 import pickle as pkl
 import sys
-import ujson as json
 from model import UNet
 from utils.dataset import load_data, get_batches
 
@@ -19,11 +18,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--prepro_dir", default="preprocessed")
 parser.add_argument("--dev_file", default="dev-v2.0.json")
 parser.add_argument("--train_file", default="train-v2.0.json")
+parser.add_argument("--elmo_weights_file", default="elmo_options.json")
+parser.add_argument("--elmo_options_file", default="elmo_weights.hdf5")
 parser.add_argument("--model_dir", help="path to store saved models.")
 parser.add_argument("--seed", default=1023)
 parser.add_argument("--use_cuda", default=True, help="whether to use GPU acceleration.")
 
-### parameters ###
+# parameters #
 parser.add_argument("--epochs", type=int, default=30)
 parser.add_argument("--use_cf", type=bool, default=True)
 parser.add_argument("--use_pd", type=bool, default=True)
