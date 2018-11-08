@@ -10,6 +10,7 @@ try:
 except Exception:
     import json
 import numpy as np
+import os
 import random
 
 from allennlp.modules.elmo import batch_to_ids
