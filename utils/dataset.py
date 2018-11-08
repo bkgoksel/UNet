@@ -27,13 +27,13 @@ def load_data(opts):
     print("load data...")
     data_path = opts["prepro_dir"]
 
-    train_data = get_data(data_path + "train.json")
-    dev_data = get_data(data_path + "dev.json")
-    word2id = get_data(data_path + "word2id.json")
+    train_data = get_data(os.path.join(data_path, "train.json"))
+    dev_data = get_data(os.path.join(data_path, "dev.json"))
+    word2id = get_data(os.path.join(data_path, "word2id.json"))
     id2word = {v: k for k, v in word2id.items()}
-    char2id = get_data(data_path + "char2id.json")
-    pos2id = get_data(data_path + "pos2id.json")
-    ner2id = get_data(data_path + "ner2id.json")
+    char2id = get_data(os.path.join(data_path, "char2id.json"))
+    pos2id = get_data(os.path.join(data_path, "pos2id.json"))
+    ner2id = get_data(os.path.join(data_path, "ner2id.json"))
 
     opts["char_size"] = int(np.max(list(char2id.values())) + 1)
     opts["pos_size"] = int(np.max(list(pos2id.values())) + 1)
