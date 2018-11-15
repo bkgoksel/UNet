@@ -5,6 +5,7 @@
 # Date              : 23.06.2018
 # Last Modified Date: 07.11.2018
 # Last Modified By  : Sun Fu <cstsunfu@gmail.com>
+import os
 import torch
 import numpy as np
 import torch.nn as nn
@@ -66,7 +67,7 @@ class UNet(nn.Module):
         opts = self.opts
         print("load embedding...")
         word_emb = np.array(
-            get_data(opts["prepro_dir"] + "word_emb.json"), dtype=np.float32
+            get_data(os.path.join(opts["prepro_dir"], "word_emb.json")), dtype=np.float32
         )
         word_size = word_emb.shape[0]
         word_dim = word_emb.shape[1]
@@ -87,7 +88,7 @@ class UNet(nn.Module):
             for p in self.word_embeddings.parameters():
                 p.requires_grad = False
         else:
-            with open(opts["prepro_dir"] + "tune_word_idx.pkl", "rb") as f:
+            with open(os.path.join(opts["prepro_dir"], "tune_word_idx.pkl"), "rb") as f:
                 tune_idx = pkl.load(f)
 
             self.fixed_idx = list(set([i for i in range(word_size)]) - set(tune_idx))
