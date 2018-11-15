@@ -11,6 +11,7 @@ import numpy as np
 import torch.nn as nn
 import pickle as pkl
 import torch.nn.functional as F
+
 try:
     import ujson as json
 except Exception:
@@ -67,7 +68,8 @@ class UNet(nn.Module):
         opts = self.opts
         print("load embedding...")
         word_emb = np.array(
-            get_data(os.path.join(opts["prepro_dir"], "word_emb.json")), dtype=np.float32
+            get_data(os.path.join(opts["prepro_dir"], "word_emb.json")),
+            dtype=np.float32,
         )
         word_size = word_emb.shape[0]
         word_dim = word_emb.shape[1]

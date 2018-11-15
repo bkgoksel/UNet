@@ -8,6 +8,7 @@
 
 import argparse
 import random
+
 try:
     import ujson as json
 except Exception:
@@ -676,23 +677,33 @@ if __name__ == "__main__":
     with open(os.path.join(args.output_dir, "tune_word_idx.pkl"), "wb") as f:
         pkl.dump(tune_idx, f)
 
-    with open(os.path.join(args.output_dir, "train_eval.json"), "w", encoding="utf-8") as f:
+    with open(
+        os.path.join(args.output_dir, "train_eval.json"), "w", encoding="utf-8"
+    ) as f:
         json.dump(train_eval, f)
 
-    with open(os.path.join(args.output_dir, "dev_eval.json"), "w", encoding="utf-8") as f:
+    with open(
+        os.path.join(args.output_dir, "dev_eval.json"), "w", encoding="utf-8"
+    ) as f:
         json.dump(dev_eval, f)
 
-    with open(os.path.join(args.output_dir, "word_emb.json"), "w", encoding="utf-8") as f:
+    with open(
+        os.path.join(args.output_dir, "word_emb.json"), "w", encoding="utf-8"
+    ) as f:
         json.dump(word_emb, f)
 
-    with open(os.path.join(args.output_dir, "word2id.json"), "w", encoding="utf-8") as f:
+    with open(
+        os.path.join(args.output_dir, "word2id.json"), "w", encoding="utf-8"
+    ) as f:
         json.dump(word2id, f)
 
-    with open(os.path.join(args.output_dir, "char2id.json"), "w", encoding="utf-8") as f:
+    with open(
+        os.path.join(args.output_dir, "char2id.json"), "w", encoding="utf-8"
+    ) as f:
         json.dump(char2id, f)
 
-    with open(os.path.join(args.output_dir, "pos2id.json"), 'w') as f:
+    with open(os.path.join(args.output_dir, "pos2id.json"), "w") as f:
         json.dump(pos2id, f)
 
-    with open(os.path.join(args.output_dir, "ner2id.json"), 'w') as f:
+    with open(os.path.join(args.output_dir, "ner2id.json"), "w") as f:
         json.dump(ner2id, f)
